@@ -1,4 +1,4 @@
-const CACHE_NAME = 'v1';
+const CACHE_NAME = 'v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -9,23 +9,30 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js'
 ];
 
-// Fixed install event
+// Install Event
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
-  ); // Added missing closing )
+  );
 });
 
-// Fixed fetch event
+// Fetch Event
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request)
       .then(res => res || fetch(e.request))
-  ); // Added missing closing )
+  );
 });
 
-// Add activate event for better control
-self.addEventListener('activate', event => {
-  event.waitUntil(self.clients.claim());
+// Activate Event
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then(keys => 
+      Promise.all(
+        keys.filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      )
+    )
+  );
 });
