@@ -590,4 +590,62 @@ body.light-mode {
     color: var(--text-secondary);
     font-style: italic;
   }
+
+    /* Add to existing styles */
+.loading-states {
+    position: relative;
+}
+
+.mini-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--neon-pink);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto;
+}
+
+.verified-badge {
+    background: var(--neon-pink);
+    color: var(--purple-dark);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    margin-left: 8px;
+    display: inline-block;
+}
+
+.admin-tools {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.report-button {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.advanced-filters {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+#searchAll {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    background: var(--card-bg);
+    border: 2px solid var(--purple-accent);
+    color: var(--text-primary);
+}
 }
