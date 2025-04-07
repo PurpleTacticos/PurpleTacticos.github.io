@@ -9,10 +9,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const darkModeToggle = document.getElementById('darkModeToggle');
     const icon = darkModeToggle?.querySelector('i');
     
-    // Data Management
-    let articles = JSON.parse(localStorage.getItem('articles')) || [];
-    const votedArticles = JSON.parse(localStorage.getItem('voted')) || [];
-  
+    // Supabase Client (Make sure you added this in HTML head)
+    // Supabase Client 
+const SUPABASE_URL = 'https://zlgdklqjaomnlfteairf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZ2RrbHFqYW9tbmxmdGVhaXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjMxODQsImV4cCI6MjA1OTYzOTE4NH0.UlpTet57p8RZcmJ5ULf2TCFVG_rTubx7rLHRTHRFRn8';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     // Service Worker Registration
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
@@ -50,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p>${safeContent}...</p>
                     <div class="article-meta">
                         <span>${DOMPurify.sanitize(article.author)}</span>
-                        <span>${new Date(article.date).toLocaleDateString()}</span>
+                        <span>${new Date(article.created_at).toLocaleDateString()}</span>
                     </div>
                     <div class="hot-take-meter" data-article-id="${article.id}">
                         <div class="score-bar" style="width: ${article.hotTakeScore}%"></div>
@@ -63,70 +64,81 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   
     // Voting System
-    function handleVote(articleId) {
-        if (!votedArticles.includes(articleId)) {
-            const article = articles.find(a => a.id === articleId);
-            article.hotTakeScore = Math.min(article.hotTakeScore + 20, 100);
-            votedArticles.push(articleId);
-            localStorage.setItem('voted', JSON.stringify(votedArticles));
-            saveArticles();
-            loadArticles();
+    async function handleVote(articleId) {
+        const { data: article, error } = await supabase
+            .from('articles')
+            .select('hotTakeScore')
+            .eq('id', articleId)
+            .single();
+
+        if (!error) {
+            const newScore = Math.min(article.hotTakeScore + 20, 100);
+            const { error: updateError } = await supabase
+                .from('articles')
+                .update({ hotTakeScore: newScore })
+                .eq('id', articleId);
+
+            if (!updateError) loadArticles();
         }
     }
   
     // Article Loading System
-    function loadArticles() {
+    async function loadArticles() {
+        const { data: articles, error } = await supabase
+            .from('articles')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) return;
+
         const hotTakesContainer = document.getElementById('hotTakes');
         const classicTakesContainer = document.getElementById('classicTakes');
         const searchResultsContainer = document.getElementById('searchResults');
-  
+
         [hotTakesContainer, classicTakesContainer, searchResultsContainer].forEach(container => {
-            if(container) container.innerHTML = '';
+            if (container) container.innerHTML = '';
         });
-  
-        const sortedArticles = articles.sort((a, b) => 
-            new Date(b.date) - new Date(a.date) || b.hotTakeScore - a.hotTakeScore
-        );
-  
-        sortedArticles.forEach(article => {
+
+        articles.forEach(article => {
             const card = createArticleCard(article);
             const targetContainer = article.hotTakeScore >= 75 ? 
                 classicTakesContainer : 
                 hotTakesContainer;
             
-            if(targetContainer) targetContainer.insertAdjacentHTML('beforeend', card);
+            if (targetContainer) targetContainer.insertAdjacentHTML('beforeend', card);
         });
-  
+
         // Update empty states
         document.getElementById('hotTakesEmpty').style.display = 
             hotTakesContainer?.children.length ? 'none' : 'block';
         document.getElementById('classicTakesEmpty').style.display = 
             classicTakesContainer?.children.length ? 'none' : 'block';
-  
+
         // Add voting handlers
         document.querySelectorAll('.hot-take-meter').forEach(meter => {
             meter.addEventListener('click', function() {
-                if(!this.classList.contains('voted')) {
-                    handleVote(Number(this.dataset.articleId));
-                    this.classList.add('voted');
-                }
+                handleVote(Number(this.dataset.articleId));
             });
         });
-  
+
         // Load Twitter widgets
-        if(typeof twttr !== 'undefined') twttr.widgets.load();
+        if (typeof twttr !== 'undefined') twttr.widgets.load();
     }
   
     // Search Functionality
-    function performSearch() {
+    async function performSearch() {
         const searchTerm = this.value.toLowerCase();
+        const { data: articles } = await supabase
+            .from('articles')
+            .select('*');
+
         const filtered = articles.filter(article => 
             article.title.toLowerCase().includes(searchTerm) ||
             article.content.toLowerCase().includes(searchTerm)
         );
         
         const container = document.getElementById('searchResults');
-        if(container) {
+        if (container) {
             container.innerHTML = filtered.map(createArticleCard).join('');
             document.getElementById('noResults').style.display = 
                 filtered.length ? 'none' : 'block';
@@ -134,40 +146,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   
     // Form Handling
-    function handleFormSubmit(e) {
+    async function handleFormSubmit(e) {
         e.preventDefault();
         
         if (!e.target.checkValidity()) {
             e.target.reportValidity();
             return;
         }
-  
+
         const newArticle = {
-            id: Date.now(),
             title: DOMPurify.sanitize(document.getElementById('takeTitle').value),
             author: DOMPurify.sanitize(document.getElementById('takeName').value),
             content: DOMPurify.sanitize(document.getElementById('takeContent').value),
             xPostLink: DOMPurify.sanitize(document.getElementById('xPostLink').value),
             image: localStorage.getItem('tempImage') || '',
-            hotTakeScore: 0,
-            date: new Date().toISOString(),
-            category: 'user'
+            hotTakeScore: 0
         };
-  
-        articles.unshift(newArticle);
-        saveArticles();
-        loadArticles();
-        e.target.reset();
-        localStorage.removeItem('tempImage');
-        showToast('Take launched! 🚀');
-        document.querySelector('.image-preview-container').innerHTML = '';
+
+        const { error } = await supabase
+            .from('articles')
+            .insert([newArticle]);
+
+        if (!error) {
+            showToast('Take launched! 🚀');
+            e.target.reset();
+            localStorage.removeItem('tempImage');
+            document.querySelector('.image-preview-container').innerHTML = '';
+        }
     }
   
     // Helper Functions
-    function saveArticles() {
-        localStorage.setItem('articles', JSON.stringify(articles));
-    }
-  
     function showToast(message) {
         const toast = document.getElementById('toast');
         toast.textContent = message;
@@ -179,17 +187,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleImageUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
-  
+
         if (!config.allowedImageTypes.includes(file.type)) {
             alert('Only JPG/PNG images allowed!');
             return;
         }
-  
+
         if (file.size > config.maxImageSize) {
             alert('Image too large! Max 2MB');
             return;
         }
-  
+
         const reader = new FileReader();
         reader.onload = (event) => {
             localStorage.setItem('tempImage', event.target.result);
@@ -211,6 +219,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeApp() {
         initializeDarkMode();
         
+        // Real-time Updates
+        supabase
+            .channel('articles')
+            .on('postgres_changes', { event: '*', schema: 'public' }, () => loadArticles())
+            .subscribe();
+
         // Event Listeners
         darkModeToggle?.addEventListener('click', toggleDarkMode);
         document.getElementById('searchInput')?.addEventListener('input', performSearch);
@@ -218,11 +232,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.take-form')?.addEventListener('submit', handleFormSubmit);
         document.getElementById('takeImage')?.addEventListener('change', handleImageUpload);
         document.getElementById('takeContent')?.addEventListener('input', updateCharCount);
-  
+
         // Initial Load
         loadArticles();
     }
   
     // Start the App
     initializeApp();
-  });
+});
