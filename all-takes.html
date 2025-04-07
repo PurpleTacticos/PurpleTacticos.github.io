@@ -1,0 +1,32 @@
+<!-- all-takes.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Takes - Purple Tacticos</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <!-- Include same head content as index.html -->
+</head>
+<body>
+    <header>
+        <!-- Same navigation as index.html -->
+    </header>
+
+    <main class="section-container">
+        <h2>🗂️ All Tactical Takes</h2>
+        <div class="advanced-filters">
+            <select id="sortFilter">
+                <option value="newest">Newest First</option>
+                <option value="hottest">Hottest Takes</option>
+                <option value="controversial">Most Controversial</option>
+            </select>
+            <input type="text" id="searchAll" placeholder="Search all takes...">
+        </div>
+        <div id="allTakes" class="article-grid"></div>
+        <div id="allEmpty" class="empty-state">No takes found in the archives</div>
+    </main>
+
+    <script src="scripts/app.js"></script>
+</body>
+</html>
