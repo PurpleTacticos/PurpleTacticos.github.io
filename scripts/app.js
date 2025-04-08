@@ -222,9 +222,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (containers.searchResults) {
                     targetContainer = containers.searchResults;
                 } else {
-                    targetContainer = article.hot_score - article.trash_score >= 50 
-                        ? containers.classicTakes 
-                        : containers.hotTakes;
+                    targetContainer = article.hot_score >= 75 // Changed from difference to absolute value
+    ? containers.classicTakes 
+    : containers.hotTakes;
                 }
 
                 if (targetContainer) {
