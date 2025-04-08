@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const OFFLINE_PAGE = '/offline.html';
 const ASSETS = [
     '/',
