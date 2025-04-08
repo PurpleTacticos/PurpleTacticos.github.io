@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Comment System
     window.handleCommentSubmit = async (articleId) => {
-        const commentInput = document.getElementById(`commentInput-${article.id}`);
+    const commentInput = document.getElementById(`commentInput-${articleId}`);
         const comment = DOMPurify.sanitize(commentInput.value.trim());
         
         if (!comment) {
