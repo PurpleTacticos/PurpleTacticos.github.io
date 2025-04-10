@@ -423,7 +423,37 @@ document.addEventListener('DOMContentLoaded', function() {
             form.addEventListener('submit', handleFormSubmit);
         });
     }
+// ========= GAME SYSTEM =========
+function launchGame(gameId) {
+    const gameUrls = {
+        'formation-puzzle': 'https://formation-puzzle.example.com',
+        'transfer-guesser': 'https://transfer-guesser.example.com',
+        'tactical-quiz': 'https://tactical-quiz.example.com',
+        'match-simulator': 'https://match-sim.example.com'
+    };
 
+    const modal = document.getElementById('gameModal');
+    const iframe = document.getElementById('gameFrame');
+    iframe.src = gameUrls[gameId];
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGame() {
+    const modal = document.getElementById('gameModal');
+    const iframe = document.getElementById('gameFrame');
+    iframe.src = '';
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('gameModal');
+    if (event.target == modal) {
+        closeGame();
+    }
+}
     // Initialize
     function initializeApp() {
         try {
