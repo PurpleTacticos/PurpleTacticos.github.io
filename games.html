@@ -1,1 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tactical Games - Purple Tacticos</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://zlgdklqjaomnlfteairf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZ2RrbHFqYW9tbmxmdGVhaXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjMxODQsImV4cCI6MjA1OTYzOTE4NH0.UlpTet57p8RZcmJ5ULf2TCFVG_rTubx7rLHRTHRFRn8';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    </script>
+</head>
+<body>
+    <header>
+        <nav class="nav-bar">
+            <div class="brand">
+                <img src="https://i.pinimg.com/736x/c7/92/2b/c7922bbec96f996d9eded7837d324ff2.jpg" alt="Logo" class="logo">
+                <h1>Purple Tacticos</h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="index.html#old-articles">Classics</a>
+                <a href="index.html#new-heat">New Heat</a>
+                <a href="search.html">Search</a>
+                <a href="games.html" class="active">Games</a>
+                <a href="all-takes.html">All Takes</a>
+                <button id="darkModeToggle" aria-label="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
 
+    <main class="section-container">
+        <h2>🎮 Tactical Training Ground</h2>
+        <p class="section-subtitle">Sharpen your football IQ with interactive challenges</p>
+        
+        <div class="game-grid">
+            <!-- Game Cards -->
+            <div class="game-card">
+                <div class="game-preview" style="background-image: url('https://assets.codepen.io/4624623/football-puzzle.png')">
+                    <div class="game-overlay">
+                        <button class="btn primary" onclick="launchGame('formation-puzzle')">Play Now</button>
+                    </div>
+                </div>
+                <h3>Formation Puzzle</h3>
+                <p>Reconstruct iconic tactical formations against the clock</p>
+                <div class="game-stats">
+                    <span><i class="fas fa-brain"></i> Tactics</span>
+                    <span><i class="fas fa-clock"></i> 2 min</span>
+                </div>
+            </div>
+
+            <!-- Repeat for other 3 game cards -->
+            <!-- ... (other game cards from previous answer) ... -->
+        </div>
+    </main>
+
+    <div id="gameModal" class="game-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeGame()">&times;</span>
+            <iframe id="gameFrame" allow="autoplay; fullscreen"></iframe>
+        </div>
+    </div>
+
+    <script src="scripts/app.js"></script>
+</body>
+</html>
