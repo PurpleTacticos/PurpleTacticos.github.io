@@ -1,6 +1,12 @@
+// scripts/games.js
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadGames();
-    setupEventListeners();
+    try {
+        await loadGames();
+        setupEventListeners();
+        updateLeaderboards();
+    } catch (error) {
+        showError('Failed to initialize games system');
+    }
 });
 
 // Game Data
