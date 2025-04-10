@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Takes - Purple Tacticos</title>
+    <title>Purple Tacticos | Football Thinking, Unshackled</title>
     <link rel="stylesheet" href="styles/main.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
-       <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = 'https://zlgdklqjaomnlfteairf.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZ2RrbHFqYW9tbmxmdGVhaXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjMxODQsImV4cCI6MjA1OTYzOTE4NH0.UlpTet57p8RZcmJ5ULf2TCFVG_rTubx7rLHRTHRFRn8';
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://zlgdklqjaomnlfteairf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZ2RrbHFqYW9tbmxmdGVhaXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjMxODQsImV4cCI6MjA1OTYzOTE4NH0.UlpTet57p8RZcmJ5ULf2TCFVG_rTubx7rLHRTHRFRn8';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    </script>
 </head>
 <body>
     <header>
@@ -23,11 +23,11 @@
                 <h1>Purple Tacticos</h1>
             </div>
             <div class="nav-links">
-                <a href="index.html">Home</a>
-                <a href="index.html#old-articles">Classics</a>
-                <a href="index.html#new-heat">New Heat</a>
-                <a href="search.html" class="active">Search</a>
-                <a href="index.html#submit-take">Submit</a>
+                <a href="#" class="active">Home</a>
+                <a href="#old-articles">Classics</a>
+                <a href="#new-heat">New Heat</a>
+                <a href="search.html">Search</a>
+                <a href="#submit-take">Submit</a>
                 <a href="all-takes.html">All Takes</a>
                 <button id="darkModeToggle" aria-label="Toggle Dark Mode">
                     <i class="fas fa-moon"></i>
@@ -35,36 +35,98 @@
             </div>
         </nav>
     </header>
-
-    <main class="search-page">
+    
+    <main>
         <section class="hero">
             <div class="hero-content">
-                <h2>🔍 Deep Dive into Takes</h2>
-                <div class="advanced-search">
-                    <input type="text" id="globalSearch" placeholder="Search all takes...">
-                    <div class="search-filters">
-                        <select id="timeFilter">
-                            <option value="all">Any Time</option>
-                            <option value="week">Last Week</option>
-                            <option value="month">Last Month</option>
-                        </select>
-                        <select id="scoreFilter">
-                            <option value="0">Any Score</option>
-                            <option value="50">🔥 Hot (50+)</option>
-                            <option value="75">🏆 Classic (75+)</option>
-                        </select>
-                    </div>
+                <h2>Football Thinking, Unshackled</h2>
+                <p>Where tactics memes meet serious analysis</p>
+                <div class="hero-buttons">
+                    <a href="#new-heat" class="btn primary">Latest Takes</a>
+                    <a href="#submit-take" class="btn secondary">Submit Take</a>
                 </div>
             </div>
         </section>
-
-        <section class="section-container">
-            <div id="searchResults" class="article-grid"></div>
-            <div id="loading" class="loading-spinner"></div>
-            <div id="noResults" class="empty-state">No takes found matching your criteria 😢</div>
+        
+        <section class="filters">
+            <div class="nav-filters">
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="🔍 Search takes...">
+                </div>
+                <button class="filter-btn active" data-category="all">All</button>
+                <button class="filter-btn" data-category="hot">🔥 Hot</button>
+                <button class="filter-btn" data-category="controversial">💣 Chaos</button>
+                <button class="filter-btn" data-category="tactical">🧠 Tactics</button>
+            </div>
+        </section>
+        
+        <section id="new-heat" class="section-container">
+            <h2>🔥 Fresh from the Tactics Lab</h2>
+            <div id="hotTakes" class="article-grid"></div>
+            <div id="hotTakesEmpty" class="empty-state">No spicy takes found! Be the first 🔥</div>
+        </section>
+        
+        <section id="old-articles" class="section-container">
+            <h2>🏆 Classic Takes</h2>
+            <div id="classicTakes" class="article-grid"></div>
+            <div id="classicTakesEmpty" class="empty-state">No legendary takes yet. Make history! 🏆</div>
+        </section>
+        
+        <section id="submit-take" class="section-container">
+            <h2>💡 Launch Your Take</h2>
+            <form class="take-form">
+                <div class="form-group">
+                    <label for="takeName">Your @Handle</label>
+                    <input type="text" id="takeName" required>
+                </div>
+                <div class="form-group">
+                    <label for="takeTitle">Take Title</label>
+                    <input type="text" id="takeTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="takeContent">Your Take <span id="charCount" class="char-counter">0/500</span></label>
+                    <textarea id="takeContent" rows="5" required maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="xPostLink">X Post Link</label>
+                    <input type="url" id="xPostLink" placeholder="https://x.com/your-post">
+                </div>
+                <div class="form-group">
+                    <label for="takeImage">Image</label>
+                    <input type="file" id="takeImage" accept="image/*">
+                    <div class="image-preview-container"></div>
+                </div>
+                <button type="submit" class="btn primary">Launch Take 🚀</button>
+            </form>
         </section>
     </main>
 
+    <div id="toast" class="toast-hidden">Take launched! 🚀</div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="https://i.pinimg.com/736x/c7/92/2b/c7922bbec96f996d9eded7837d324ff2.jpg" alt="Logo" class="logo">
+                <h3>Purple Tacticos</h3>
+            </div>
+            <div class="footer-links">
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+            </div>
+            <div class="social-links">
+                <a href="https://twitter.com/PurpleTacticos" aria-label="Twitter" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-twitter"></i>
+                </a>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025 Purple Tacticos. All rights reserved.</p>
+        </div>
+    </footer>
+
     <script src="scripts/app.js"></script>
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 </body>
 </html>
