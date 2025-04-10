@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Configuration
     const config = {
-        maxImageSize: 2 * 1024 * 1024, // 2MB
+        maxImageSize: 2 * 1024 * 1024,
         allowedImageTypes: ['image/jpeg', 'image/png']
     };
 
@@ -14,11 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // State Management
     let votedArticles = JSON.parse(localStorage.getItem('voted')) || [];
     
-    // Dark Mode Toggle
+    // Dark Mode
     const darkModeToggle = document.getElementById('darkModeToggle');
     const icon = darkModeToggle?.querySelector('i');
 
-    // Initialize Dark Mode
     function initializeDarkMode() {
         if (localStorage.getItem('darkMode') === 'light') {
             document.body.classList.add('light-mode');
@@ -35,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
         icon?.classList.toggle('fa-sun');
     }
 
-    // Service Worker Registration
+    // Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(() => console.log('Service Worker Registered'))
@@ -46,9 +45,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function createArticleCard(article) {
         const safeContent = DOMPurify.sanitize(article.content.substring(0, 100));
         const isVoted = votedArticles.includes(article.id);
-        const totalVotes = article.hot_score + article.trash_score;
-        const hotPercentage = totalVotes > 0 ? (article.hot_score / totalVotes) * 100 : 50;
-        const trashPercentage = totalVotes > 0 ? (article.trash_score / totalVotes) * 100 : 50;
+        const hotScore = article.hot_score || 0;
+        const trashScore = article.trash_score || 0;
+        const totalVotes = hotScore + trashScore;
+        const hotPercentage = totalVotes > 0 ? (hotScore / totalVotes) * 100 : 50;
+        const trashPercentage = totalVotes > 0 ? (trashScore / totalVotes) * 100 : 50;
 
         return `
             <div class="article-card" data-id="${article.id}">
@@ -65,12 +66,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="meter hot-meter ${isVoted ? 'voted' : ''}" 
                              onclick="handleVote('${article.id}', 'hot')">
                             <div class="score-bar" style="width: ${hotPercentage}%"></div>
-                            <span class="score">🔥 ${article.hot_score}</span>
+                            <span class="score">🔥 ${hotScore}</span>
                         </div>
                         <div class="meter trash-meter ${isVoted ? 'voted' : ''}" 
                              onclick="handleVote('${article.id}', 'trash')">
                             <div class="score-bar" style="width: ${trashPercentage}%"></div>
-                            <span class="score">🗑️ ${article.trash_score}</span>
+                            <span class="score">🗑️ ${trashScore}</span>
                         </div>
                     </div>
                     <div class="comments-section">
@@ -89,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Voting System
     window.handleVote = async (articleId, voteType) => {
         if (votedArticles.includes(articleId)) {
-            showToast('You already voted on this take!');
+            showToast('You already voted!');
             return;
         }
 
@@ -102,14 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (error) throw error;
 
-            const updates = {};
-            if (voteType === 'hot') {
-                updates.hot_score = article.hot_score + 1;
-                showToast('🔥 Hot take registered!');
-            } else {
-                updates.trash_score = article.trash_score + 1;
-                showToast('🗑️ Trash take noted!');
-            }
+            const updates = voteType === 'hot' 
+                ? { hot_score: (article.hot_score || 0) + 1 } 
+                : { trash_score: (article.trash_score || 0) + 1 };
 
             const { error: updateError } = await supabase
                 .from('articles')
@@ -122,14 +118,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadArticles();
             }
         } catch (error) {
-            console.error('Voting error:', error);
             showToast('Voting failed. Try again!');
         }
     };
 
     // Comment System
     window.handleCommentSubmit = async (articleId) => {
-    const commentInput = document.getElementById(`commentInput-${articleId}`);
+        const commentInput = document.getElementById(`commentInput-${articleId}`);
         const comment = DOMPurify.sanitize(commentInput.value.trim());
         
         if (!comment) {
@@ -153,7 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast('Comment posted!');
             loadComments(articleId);
         } catch (error) {
-            console.error('Comment error:', error);
             showToast('Failed to post comment');
         }
     };
@@ -166,21 +160,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 .eq('article_id', articleId)
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
-
             const container = document.getElementById(`comments-${articleId}`);
             if (container) {
-                container.innerHTML = comments.length > 0 
-                    ? comments.map(comment => `
-                        <div class="comment">
-                            <div class="comment-header">
-                                <span class="comment-author">${comment.author}</span>
-                                <span class="comment-date">${new Date(comment.created_at).toLocaleString()}</span>
-                            </div>
-                            <p class="comment-content">${comment.content}</p>
+                container.innerHTML = comments.map(comment => `
+                    <div class="comment">
+                        <div class="comment-header">
+                            <span class="comment-author">${comment.author}</span>
+                            <span class="comment-date">${new Date(comment.created_at).toLocaleString()}</span>
                         </div>
-                    `).join('')
-                    : '<p class="empty-comments">No comments yet. Be the first!</p>';
+                        <p class="comment-content">${comment.content}</p>
+                    </div>
+                `).join('') || '<p class="empty-comments">No comments yet!</p>';
             }
         } catch (error) {
             console.error('Comments error:', error);
@@ -191,13 +181,10 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadArticles() {
         try {
             showLoading(true);
-            
             const { data: articles, error } = await supabase
                 .from('articles')
                 .select('*')
                 .order('created_at', { ascending: false });
-
-            if (error) throw error;
 
             const containers = {
                 hotTakes: document.getElementById('hotTakes'),
@@ -206,41 +193,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 allTakes: document.getElementById('allTakes')
             };
 
-            // Clear containers
-            Object.values(containers).forEach(container => {
-                if (container) container.innerHTML = '';
-            });
+            Object.values(containers).forEach(c => c && (c.innerHTML = ''));
 
-            // Populate containers
             articles.forEach(article => {
                 const card = createArticleCard(article);
+                let targetContainer = containers.allTakes || containers.searchResults || 
+                    ((article.hot_score || 0) >= 75 ? containers.classicTakes : containers.hotTakes);
                 
-                // Determine which container to use
-                let targetContainer;
-                if (containers.allTakes) {
-                    targetContainer = containers.allTakes;
-                } else if (containers.searchResults) {
-                    targetContainer = containers.searchResults;
-                } else {
-                    targetContainer = article.hot_score >= 75 // Changed from difference to absolute value
-    ? containers.classicTakes 
-    : containers.hotTakes;
-                }
-
                 if (targetContainer) {
                     targetContainer.insertAdjacentHTML('beforeend', card);
-                    loadComments(article.id);
+                    setTimeout(() => loadComments(article.id), 100);
                 }
             });
 
-            // Update empty states
-            updateEmptyState('hotTakes', 'hotTakesEmpty');
-            updateEmptyState('classicTakes', 'classicTakesEmpty');
-            updateEmptyState('searchResults', 'noResults');
-            updateEmptyState('allTakes', 'allEmpty');
+            ['hotTakes', 'classicTakes', 'searchResults', 'allTakes'].forEach(id => {
+                const container = document.getElementById(id);
+                const emptyState = document.getElementById(`${id}Empty`);
+                if (container && emptyState) {
+                    emptyState.style.display = container.children.length ? 'none' : 'block';
+                }
+            });
 
         } catch (error) {
-            console.error('Loading error:', error);
             showToast('Failed to load content');
         } finally {
             showLoading(false);
@@ -248,17 +222,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function updateEmptyState(containerId, emptyStateId) {
-        const container = document.getElementById(containerId);
-        const emptyState = document.getElementById(emptyStateId);
-        if (container && emptyState) {
-            emptyState.style.display = container.children.length > 0 ? 'none' : 'block';
+    // Filter System
+    async function handleFilterClick(e) {
+        const category = e.target.dataset.category;
+        try {
+            let query = supabase.from('articles').select('*');
+            
+            switch(category) {
+                case 'hot':
+                    query = query.gte('hot_score', 50);
+                    break;
+                case 'controversial':
+                    query = query.gte('trash_score', 30);
+                    break;
+                case 'tactical':
+                    query = query.ilike('title', '%tactics%');
+                    break;
+            }
+
+            const { data: articles, error } = await query;
+            document.getElementById('hotTakes').innerHTML = articles.map(createArticleCard).join('');
+        } catch (error) {
+            showToast('Filter error');
         }
     }
 
-    function showLoading(show) {
-        const spinner = document.getElementById('loading');
-        if (spinner) spinner.style.display = show ? 'block' : 'none';
+    // Sorting System
+    async function handleSortChange(e) {
+        try {
+            let query = supabase.from('articles').select('*');
+            
+            switch(e.target.value) {
+                case 'hottest':
+                    query = query.order('hot_score', { ascending: false });
+                    break;
+                case 'controversial':
+                    query = query.order('trash_score', { ascending: false });
+                    break;
+                default:
+                    query = query.order('created_at', { ascending: false });
+            }
+
+            const { data: articles, error } = await query;
+            document.getElementById('allTakes').innerHTML = articles.map(createArticleCard).join('');
+        } catch (error) {
+            showToast('Sorting failed');
+        }
     }
 
     // Form Handling
@@ -308,13 +317,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!file) return;
 
         if (!config.allowedImageTypes.includes(file.type)) {
-            showToast('Only JPG/PNG images allowed!');
+            showToast('Only JPG/PNG allowed!');
             e.target.value = '';
             return;
         }
 
         if (file.size > config.maxImageSize) {
-            showToast('Image too large! Max 2MB');
+            showToast('Max 2MB allowed!');
             e.target.value = '';
             return;
         }
@@ -324,67 +333,17 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('tempImage', event.target.result);
             document.querySelector('.image-preview-container').innerHTML = `
                 <img src="${event.target.result}" class="image-preview">
-                <button class="remove-image" onclick="this.parentElement.innerHTML = ''; localStorage.removeItem('tempImage');">×</button>
+                <button class="remove-image" 
+                        onclick="this.parentElement.innerHTML = ''; localStorage.removeItem('tempImage')">
+                    ×
+                </button>
             `;
+            if (window.twttr) window.twttr.widgets.load();
         };
         reader.readAsDataURL(file);
     }
 
-    // Toast Notifications
-    function showToast(message) {
-        const toast = document.getElementById('toast');
-        if (!toast) return;
-        
-        toast.textContent = message;
-        toast.classList.remove('toast-hidden');
-        
-        setTimeout(() => {
-            toast.classList.add('toast-hidden');
-        }, 3000);
-    }
-
-    // Character Counter
-    function updateCharCount() {
-        const counter = document.getElementById('charCount');
-        if (counter) {
-            const textarea = document.getElementById('takeContent');
-            counter.textContent = `${textarea.value.length}/500`;
-        }
-    }
-
-    // Real-Time Updates
-    const realtimeChannel = supabase
-        .channel('realtime-updates')
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'articles'
-        }, () => loadArticles())
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'comments'
-        }, (payload) => {
-            const articleId = payload.new.article_id;
-            loadComments(articleId);
-        })
-        .subscribe();
-
-    // Event Listeners
-    function setupEventListeners() {
-        darkModeToggle?.addEventListener('click', toggleDarkMode);
-        document.getElementById('searchInput')?.addEventListener('input', performSearch);
-        document.getElementById('globalSearch')?.addEventListener('input', performSearch);
-        document.getElementById('takeImage')?.addEventListener('change', handleImageUpload);
-        document.getElementById('takeContent')?.addEventListener('input', updateCharCount);
-        
-        const forms = document.querySelectorAll('.take-form');
-        forms.forEach(form => {
-            form.addEventListener('submit', handleFormSubmit);
-        });
-    }
-
-    // Search Functionality
+    // Search System
     async function performSearch() {
         try {
             const searchTerm = document.getElementById('globalSearch')?.value.toLowerCase() || '';
@@ -411,8 +370,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const { data: articles, error } = await query;
-            if (error) throw error;
-
             const container = document.getElementById('searchResults');
             if (container) {
                 container.innerHTML = articles.map(createArticleCard).join('');
@@ -423,16 +380,60 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
         } catch (error) {
-            console.error('Search error:', error);
             showToast('Search failed');
         }
     }
 
-    // Initialize App
+    // Helper Functions
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.remove('toast-hidden');
+        setTimeout(() => toast.classList.add('toast-hidden'), 3000);
+    }
+
+    function updateCharCount() {
+        const counter = document.getElementById('charCount');
+        if (counter) {
+            const textarea = document.getElementById('takeContent');
+            counter.textContent = `${textarea.value.length}/500`;
+        }
+    }
+
+    function showLoading(show) {
+        const spinner = document.getElementById('loading');
+        if (spinner) spinner.style.display = show ? 'block' : 'none';
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+        darkModeToggle?.addEventListener('click', toggleDarkMode);
+        document.getElementById('searchInput')?.addEventListener('input', performSearch);
+        document.getElementById('globalSearch')?.addEventListener('input', performSearch);
+        document.getElementById('takeImage')?.addEventListener('change', handleImageUpload);
+        document.getElementById('takeContent')?.addEventListener('input', updateCharCount);
+        document.getElementById('sortFilter')?.addEventListener('change', handleSortChange);
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', handleFilterClick);
+        });
+
+        document.querySelectorAll('.take-form').forEach(form => {
+            form.addEventListener('submit', handleFormSubmit);
+        });
+    }
+
+    // Initialize
     function initializeApp() {
-        initializeDarkMode();
-        setupEventListeners();
-        loadArticles();
+        try {
+            initializeDarkMode();
+            setupEventListeners();
+            loadArticles();
+        } catch (error) {
+            console.error('Critical error:', error);
+            document.body.innerHTML = `<h1>System Error</h1><p>${error.message}</p>`;
+        }
     }
 
     initializeApp();
