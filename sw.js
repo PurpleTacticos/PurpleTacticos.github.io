@@ -4,6 +4,7 @@ const OFFLINE_PAGE = '/offline.html';
 const ASSETS = [
     '/',
     '/index.html',
+    '/games.html',
     '/all-takes.html',
     '/search.html',
     '/legal.html',
