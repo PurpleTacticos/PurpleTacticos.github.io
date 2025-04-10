@@ -624,4 +624,123 @@ body.light-mode .meter {
     .comments-container {
         max-height: 200px;
     }
+
+    /* ========= GAMES PAGE ========= */
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.game-card {
+    background: var(--card-bg);
+    border-radius: 15px;
+    overflow: hidden;
+    transition: var(--transition);
+    position: relative;
+}
+
+.game-preview {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.game-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(42, 9, 68, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.game-card:hover .game-overlay {
+    opacity: 1;
+}
+
+.game-card h3 {
+    padding: 1rem 1.5rem 0;
+    font-size: 1.4rem;
+}
+
+.game-card p {
+    padding: 0 1.5rem 1rem;
+    color: var(--text-secondary);
+}
+
+.game-stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 1.5rem 1.5rem;
+    font-size: 0.9rem;
+    color: var(--neon-pink);
+}
+
+.game-stats i {
+    margin-right: 0.3rem;
+}
+
+/* Game Modal */
+.game-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 2000;
+}
+
+.modal-content {
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 800px;
+    background: var(--purple-dark);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    color: var(--text-primary);
+    font-size: 40px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.close-modal:hover {
+    color: var(--neon-pink);
+}
+
+#gameFrame {
+    width: 100%;
+    height: 600px;
+    border: none;
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    #gameFrame {
+        height: 400px;
+    }
+    
+    .modal-content {
+        padding: 10px;
+    }
+}
 }
