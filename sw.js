@@ -4,13 +4,17 @@ const OFFLINE_PAGE = '/offline.html';
 const ASSETS = [
     '/',
     '/index.html',
-    '/games.html',
     '/all-takes.html',
     '/search.html',
     '/legal.html',
+    '/games.html',
+    '/scripts/games.js',
     '/styles/main.css',
+    'https://www.transparenttextures.com/patterns/football-pitch.png',
+    'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js',
+
     '/scripts/app.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js'
+    
 ];
 
 self.addEventListener('install', (e) => {
