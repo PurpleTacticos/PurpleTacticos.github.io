@@ -749,7 +749,7 @@ body.light-mode .meter {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
-    margin: 2rem 0;
+    padding: 2rem 5%;
 }
 
 .game-section {
@@ -761,13 +761,11 @@ body.light-mode .meter {
 }
 
 .formation-builder {
-    position: relative;
-    height: 600px;
     background: url('https://www.transparenttextures.com/patterns/football-pitch.png');
-    background-size: cover;
+    height: 60vh;
+    position: relative;
     margin: 2rem 0;
     border-radius: 15px;
-    overflow: hidden;
 }
 
 .player-dot {
@@ -781,8 +779,6 @@ body.light-mode .meter {
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    border: 2px solid var(--purple-dark);
-    transition: transform 0.2s ease;
 }
 
 .player-dot:hover {
