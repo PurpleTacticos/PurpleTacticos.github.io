@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tactical Games - Purple Tacticos</title>
+    <title>Football Games - Purple Tacticos</title>
     <link rel="stylesheet" href="styles/main.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -11,7 +11,7 @@
     <script>
         const SUPABASE_URL = 'https://zlgdklqjaomnlfteairf.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZ2RrbHFqYW9tbmxmdGVhaXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjMxODQsImV4cCI6MjA1OTYzOTE4NH0.UlpTet57p8RZcmJ5ULf2TCFVG_rTubx7rLHRTHRFRn8';
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </script>
 </head>
 <body>
@@ -36,79 +36,45 @@
     </header>
 
     <main class="section-container">
-        <h2>🎮 Tactical Training Ground</h2>
-        <p class="section-subtitle">Sharpen your football IQ with interactive challenges</p>
-        
-      <div class="game-grid">
-    <!-- Formation Puzzle Card -->
-    <div class="game-card">
-        <div class="game-preview" style="background-image: url('https://assets.codepen.io/4624623/football-puzzle.png')">
-            <div class="game-overlay">
-                <button class="btn primary" onclick="launchGame('formation-puzzle')">Play Now</button>
-            </div>
+        <h2>⚽ Interactive Football Games</h2>
+        <div class="game-lobby" id="gameLobby">
+            <!-- Games will be loaded here -->
         </div>
-        <h3>Formation Puzzle</h3>
-        <p>Reconstruct iconic tactical formations against the clock</p>
-        <div class="game-stats">
-            <span><i class="fas fa-brain"></i> Tactics</span>
-            <span><i class="fas fa-clock"></i> 2 min</span>
-        </div>
-    </div>
 
-    <!-- Transfer Guesser Card -->
-    <div class="game-card">
-        <div class="game-preview" style="background-image: url('https://assets.codepen.io/4624623/transfer-guess.png')">
-            <div class="game-overlay">
-                <button class="btn primary" onclick="launchGame('transfer-guesser')">Play Now</button>
+        <!-- Formation Builder Game -->
+        <div id="formationGame" class="hidden game-section">
+            <div class="game-header">
+                <button class="btn secondary" onclick="exitGame()">Exit</button>
+                <h3>Formation Builder</h3>
+                <div class="game-stats">
+                    <span id="formationTimer">02:00</span>
+                    <span id="formationScore">Score: 0</span>
+                </div>
+            </div>
+            <div class="formation-builder" id="formationBuilder"></div>
+            <div class="leaderboard">
+                <h4>Top Formations</h4>
+                <div id="formationLeaderboard"></div>
             </div>
         </div>
-        <h3>Transfer Guesser</h3>
-        <p>Guess player transfer values based on stats</p>
-        <div class="game-stats">
-            <span><i class="fas fa-coins"></i> Finance</span>
-            <span><i class="fas fa-chart-line"></i> Hard</span>
-        </div>
-    </div>
 
-    <!-- Tactical Quiz Card -->
-    <div class="game-card">
-        <div class="game-preview" style="background-image: url('https://assets.codepen.io/4624623/football-quiz.png')">
-            <div class="game-overlay">
-                <button class="btn primary" onclick="launchGame('tactical-quiz')">Play Now</button>
+        <!-- Transfer Quiz Game -->
+        <div id="transferQuiz" class="hidden game-section">
+            <div class="game-header">
+                <button class="btn secondary" onclick="exitGame()">Exit</button>
+                <h3>Transfer Market Quiz</h3>
+                <div class="game-stats">
+                    <span id="quizScore">Score: 0</span>
+                </div>
+            </div>
+            <div class="transfer-quiz" id="transferQuizContainer"></div>
+            <div class="leaderboard">
+                <h4>Top Traders</h4>
+                <div id="transferLeaderboard"></div>
             </div>
         </div>
-        <h3>Tactical Quiz</h3>
-        <p>Test your knowledge of football strategies</p>
-        <div class="game-stats">
-            <span><i class="fas fa-graduation-cap"></i> Education</span>
-            <span><i class="fas fa-star"></i> 500+ plays</span>
-        </div>
-    </div>
-
-    <!-- Match Simulator Card -->
-    <div class="game-card">
-        <div class="game-preview" style="background-image: url('https://assets.codepen.io/4624623/football-sim.png')">
-            <div class="game-overlay">
-                <button class="btn primary" onclick="launchGame('match-simulator')">Play Now</button>
-            </div>
-        </div>
-        <h3>Match Simulator</h3>
-        <p>Make real-time tactical decisions in live scenarios</p>
-        <div class="game-stats">
-            <span><i class="fas fa-running"></i> Simulation</span>
-            <span><i class="fas fa-trophy"></i> Leaderboards</span>
-        </div>
-    </div>
-</div>
     </main>
 
-    <div id="gameModal" class="game-modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeGame()">&times;</span>
-            <iframe id="gameFrame" allow="autoplay; fullscreen"></iframe>
-        </div>
-    </div>
-
-    <script src="scripts/app.js"></script>
+    <script src="scripts/games.js"></script>
 </body>
 </html>
