@@ -1,430 +1,470 @@
 // scripts/app.js
 document.addEventListener('DOMContentLoaded', function() {
+    // Configuration
+    const config = {
+        maxImageSize: 2 * 1024 * 1024,
+        allowedImageTypes: ['image/jpeg', 'image/png']
+    };
 
-// Configuration
-const config = {
-  maxImageSize: 2 * 1024 * 1024,
-  allowedImageTypes: ['image/jpeg', 'image/png']
-};
+    // Supabase Client
+    const SUPABASE_URL = 'https://zlgdklqjaomnlfteairf.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZ2RrbHFqYW9tbmxmdGVhaXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjMxODQsImV4cCI6MjA1OTYzOTE4NH0.UlpTet57p8RZcmJ5ULf2TCFVG_rTubx7rLHRTHRFRn8';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Supabase Client
-const SUPABASE_URL = 'https://zlgdklqjaomnlfteairf.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZ2RrbHFqYW9tbmxmdGVhaXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjMxODQsImV4cCI6MjA1OTYzOTE4NH0.UlpTet57p8RZcmJ5ULf2TCFVG_rTubx7rLHRTHRFRn8';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // State Management
+    let votedArticles = JSON.parse(localStorage.getItem('voted')) || [];
+    
+    // Dark Mode
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const icon = darkModeToggle?.querySelector('i');
 
-// State Management
-let votedArticles = JSON.parse(localStorage.getItem('voted')) || [];
+    function initializeDarkMode() {
+        if (localStorage.getItem('darkMode') === 'light') {
+            document.body.classList.add('light-mode');
+            icon?.classList.replace('fa-moon', 'fa-sun');
+        }
+    }
 
-// Dark Mode
-const darkModeToggle = document.getElementById('darkModeToggle');
-const icon = darkModeToggle?.querySelector('i');
+    function toggleDarkMode() {
+        document.body.classList.toggle('light-mode');
+        localStorage.setItem('darkMode', 
+            document.body.classList.contains('light-mode') ? 'light' : 'dark'
+        );
+        icon?.classList.toggle('fa-moon');
+        icon?.classList.toggle('fa-sun');
+    }
 
-function initializeDarkMode() {
-  if (localStorage.getItem('darkMode') === 'light') {
-    document.body.classList.add('light-mode');
-    icon?.classList.replace('fa-moon', 'fa-sun');
-  }
-}
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('Service Worker Registered'))
+            .catch(err => console.log('Service Worker Error:', err));
+    }
 
-function toggleDarkMode() {
-  document.body.classList.toggle('light-mode');
-  localStorage.setItem('darkMode',
-    document.body.classList.contains('light-mode') ? 'light' : 'dark'
-  );
-  icon?.classList.toggle('fa-moon');
-  icon?.classList.toggle('fa-sun');
-}
+    // Article Card Creation
+    function createArticleCard(article) {
+        const safeContent = DOMPurify.sanitize(article.content.substring(0, 100));
+        const isVoted = votedArticles.includes(article.id);
+        const hotScore = article.hot_score || 0;
+        const trashScore = article.trash_score || 0;
+        const totalVotes = hotScore + trashScore;
+        const hotPercentage = totalVotes > 0 ? (hotScore / totalVotes) * 100 : 50;
+        const trashPercentage = totalVotes > 0 ? (trashScore / totalVotes) * 100 : 50;
 
-// DOM Elements
-const articlesContainer = document.getElementById('articles');
-const emptyState = document.getElementById('emptyState');
-const toast = document.getElementById('toast');
-const loadingSpinner = document.getElementById('loading');
-const takeForm = document.getElementById('takeForm');
-const imageInput = document.getElementById('image');
-const imagePreview = document.getElementById('imagePreview');
-const removeImageButton = document.getElementById('removeImage');
-
-// --- UTILITY FUNCTIONS ---
-function showToast(message) {
-    toast.textContent = message;
-    toast.classList.remove('toast-hidden');
-    setTimeout(() => {
-        toast.classList.add('toast-hidden');
-    }, 3000);
-}
-
-function showLoading() {
-    loadingSpinner.style.display = 'block';
-}
-
-function hideLoading() {
-    loadingSpinner.style.display = 'none';
-}
-
-// --- ARTICLE CARD CREATION ---
-function createArticleCard(article) {
-    const safeTitle = DOMPurify.sanitize(article.title);
-    const safeContent = DOMPurify.sanitize(article.content);
-
-    return `
-        <div class="article-card">
-            <img src="${article.image_url || '/images/default-image.jpg'}" alt="Article Image" class="article-image">
-            <div class="article-content">
-                <h3 class="article-title">${safeTitle}</h3>
-                <p class="article-excerpt">${safeContent.length > 100 ? safeContent.substring(0, 100) + '...' : safeContent}</p>
-                <div class="article-meta">
-                    <span>Published: ${new Date(article.created_at).toLocaleDateString()}</span>
-                    <span>Comments: ${article.commentCount || 0}</span>
+        return `
+            <div class="article-card" data-id="${article.id}">
+                ${article.image ? `<img src="${article.image}" class="article-image" alt="Take image">` : ''}
+                ${article.xPostLink ? `<blockquote class="twitter-tweet"><a href="${DOMPurify.sanitize(article.xPostLink)}"></a></blockquote>` : ''}
+                <div class="article-content">
+                    <h3 class="article-title">${DOMPurify.sanitize(article.title)}</h3>
+                    <p class="article-excerpt">${safeContent}${article.content.length > 100 ? '...' : ''}</p>
+                    <div class="article-meta">
+                        <span>${DOMPurify.sanitize(article.author)}</span>
+                        <span>${new Date(article.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div class="vote-container">
+                        <div class="meter hot-meter ${isVoted ? 'voted' : ''}" 
+                             onclick="handleVote('${article.id}', 'hot')">
+                            <div class="score-bar" style="width: ${hotPercentage}%"></div>
+                            <span class="score">🔥 ${hotScore}</span>
+                        </div>
+                        <div class="meter trash-meter ${isVoted ? 'voted' : ''}" 
+                             onclick="handleVote('${article.id}', 'trash')">
+                            <div class="score-bar" style="width: ${trashPercentage}%"></div>
+                            <span class="score">🗑️ ${trashScore}</span>
+                        </div>
+                    </div>
+                    <div class="comments-section">
+                        <div class="comment-form">
+                            <input type="text" id="commentInput-${article.id}" 
+                                   placeholder="Add your take..." maxlength="280">
+                            <button onclick="handleCommentSubmit('${article.id}')">Post</button>
+                        </div>
+                        <div id="comments-${article.id}" class="comments-container"></div>
+                    </div>
                 </div>
             </div>
-
-            <div class="vote-container">
-                <div class="meter hot-meter ${votedArticles.includes(article.id) ? 'voted' : ''}"
-                     onclick="voteArticle(${article.id}, 'hot')"
-                     title="${votedArticles.includes(article.id) ? 'You already voted!' : 'Vote Hot'}">
-                    <span class="score-bar" style="width: ${article.hotMeter}%"></span>
-                    <span class="score">${article.hotMeter}%</span>
-                </div>
-                <div class="meter trash-meter ${votedArticles.includes(article.id) ? 'voted' : ''}"
-                     onclick="voteArticle(${article.id}, 'trash')"
-                     title="${votedArticles.includes(article.id) ? 'You already voted!' : 'Vote Trash'}">
-                    <span class="score-bar" style="width: ${article.trashMeter}%"></span>
-                    <span class="score">${article.trashMeter}%</span>
-                </div>
-            </div>
-
-            <section class="comments-section">
-                <form class="comment-form" onsubmit="event.preventDefault(); submitComment(${article.id})">
-                    <input type="text" id="commentInput-${article.id}" placeholder="Add a comment..." required>
-                    <button type="submit">Comment</button>
-                </form>
-                <div class="comments-container" id="comments-${article.id}">
-                    <!-- Comments will be loaded here -->
-                </div>
-            </section>
-        </div>
-    `;
-}
-
-// --- LOAD ARTICLES ---
-async function loadArticles() {
-    showLoading();
-    emptyState.style.display = 'none';
-    articlesContainer.innerHTML = '';
-
-    const { data: articles, error } = await supabase
-        .from('takes')
-        .select(`
-            id,
-            created_at,
-            title,
-            content,
-            image_url,
-            hotMeter,
-            trashMeter,
-            commentCount,
-            comments (
-                id,
-                created_at,
-                content,
-                article_id
-            )
-        `)
-        .order('created_at', { ascending: false });
-
-    hideLoading();
-
-    if (error) {
-        console.error("Error loading articles:", error);
-        showToast('Failed to load articles.');
-        emptyState.style.display = 'block';
-        return;
+        `;
     }
 
-    if (articles.length === 0) {
-        emptyState.style.display = 'block';
-        return;
-    }
-
-    articles.forEach(article => {
-        articlesContainer.innerHTML += createArticleCard(article);
-        loadComments(article.id);
-    });
-}
-
-// --- VOTE ARTICLE ---
-async function voteArticle(articleId, voteType) {
-    if (votedArticles.includes(articleId)) {
-        showToast('You have already voted on this article.');
-        return;
-    }
-
-    const isHot = voteType === 'hot';
-
-    const { data, error } = await supabase
-        .rpc('vote', {
-            article_id: articleId,
-            is_hot: isHot
-        });
-
-    if (error) {
-        console.error("Voting error:", error);
-        showToast('Voting failed. Please try again.');
-        return;
-    }
-
-    votedArticles.push(articleId);
-    localStorage.setItem('voted', JSON.stringify(votedArticles));
-    showToast(`You voted this take as ${voteType}!`);
-    loadArticles();
-}
-
-// --- SUBMIT COMMENT ---
-async function submitComment(articleId) {
-    const commentInput = document.getElementById(`commentInput-${articleId}`);
-    const commentText = commentInput.value.trim();
-
-    if (!commentText) {
-        showToast('Comment cannot be empty.');
-        return;
-    }
-
-    const { data, error } = await supabase
-        .from('comments')
-        .insert([{
-            content: commentText,
-            article_id: articleId
-        }])
-        .select('*');
-
-    if (error) {
-        console.error("Error submitting comment:", error);
-        showToast('Failed to submit comment.');
-        return;
-    }
-
-    commentInput.value = ''; // Clear the input field
-    showToast('Comment submitted successfully!');
-    loadComments(articleId);
-    loadArticles();
-}
-
-// --- LOAD COMMENTS ---
-async function loadComments(articleId) {
-    const commentsContainer = document.getElementById(`comments-${articleId}`);
-    commentsContainer.innerHTML = '';
-
-    const { data: comments, error } = await supabase
-        .from('comments')
-        .select('*')
-        .eq('article_id', articleId)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error("Error loading comments:", error);
-        commentsContainer.innerHTML = '<p>Failed to load comments.</p>';
-        return;
-    }
-
-    if (comments && comments.length > 0) {
-        comments.forEach(comment => {
-            const commentDiv = document.createElement('div');
-            commentDiv.className = 'comment';
-            commentDiv.innerHTML = `
-                <div class="comment-header">
-                    <span class="comment-author">Anonymous</span>
-                    <span class="comment-date">${new Date(comment.created_at).toLocaleDateString()}</span>
-                </div>
-                <p class="comment-content">${DOMPurify.sanitize(comment.content)}</p>
-            `;
-            commentsContainer.appendChild(commentDiv);
-        });
-    } else {
-        commentsContainer.innerHTML = '<p>No comments yet. Be the first to comment!</p>';
-    }
-}
-
-// --- HANDLE IMAGE INPUT ---
-imageInput?.addEventListener('change', function() {
-    const file = this.files[0];
-
-    if (!file) {
-        imagePreview.src = "";
-        imagePreview.parentElement.style.display = 'none';
-        return;
-    }
-
-    if (file.size > config.maxImageSize) {
-        alert("Image size exceeds the maximum limit of 2MB.");
-        this.value = '';
-        imagePreview.src = "";
-        imagePreview.parentElement.style.display = 'none';
-        return;
-    }
-
-    if (!config.allowedImageTypes.includes(file.type)) {
-        alert("Invalid image format. Only JPEG and PNG are allowed.");
-        this.value = '';
-        imagePreview.src = "";
-        imagePreview.parentElement.style.display = 'none';
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        imagePreview.src = e.target.result;
-        imagePreview.parentElement.style.display = 'block';
-    }
-    reader.readAsDataURL(file);
-});
-
-// --- REMOVE IMAGE ---
-removeImageButton?.addEventListener('click', function() {
-    imageInput.value = '';
-    imagePreview.src = "";
-    imagePreview.parentElement.style.display = 'none';
-});
-
-// --- SUBMIT TAKE FORM ---
-takeForm?.addEventListener('submit', async function(event) {
-    event.preventDefault();
-
-    const title = document.getElementById('title').value.trim();
-    const content = document.getElementById('content').value.trim();
-    const imageFile = imageInput.files[0];
-
-    if (!title || !content) {
-        showToast('Title and content cannot be empty.');
-        return;
-    }
-
-    showLoading();
-
-    let imageUrl = null;
-    if (imageFile) {
-        const timestamp = new Date().getTime();
-        const imageName = `take_image_${timestamp}.${imageFile.name.split('.').pop()}`;
-
-        const { data, error: uploadError } = await supabase
-            .storage
-            .from('take_images')
-            .upload(imageName, imageFile, {
-                cacheControl: '3600',
-                upsert: false
-            });
-
-        if (uploadError) {
-            hideLoading();
-            console.error("Image upload error:", uploadError);
-            showToast('Failed to upload image.');
+    // Voting System
+    window.handleVote = async (articleId, voteType) => {
+        if (votedArticles.includes(articleId)) {
+            showToast('You already voted!');
             return;
         }
 
-        imageUrl = `${SUPABASE_URL}/storage/v1/object/public/take_images/${imageName}`;
+        try {
+            const { data: article, error } = await supabase
+                .from('articles')
+                .select('hot_score, trash_score')
+                .eq('id', articleId)
+                .single();
+
+            if (error) throw error;
+
+            const updates = voteType === 'hot' 
+                ? { hot_score: (article.hot_score || 0) + 1 } 
+                : { trash_score: (article.trash_score || 0) + 1 };
+
+            const { error: updateError } = await supabase
+                .from('articles')
+                .update(updates)
+                .eq('id', articleId);
+
+            if (!updateError) {
+                votedArticles.push(articleId);
+                localStorage.setItem('voted', JSON.stringify(votedArticles));
+                loadArticles();
+            }
+        } catch (error) {
+            showToast('Voting failed. Try again!');
+        }
+    };
+
+    // Comment System
+    window.handleCommentSubmit = async (articleId) => {
+        const commentInput = document.getElementById(`commentInput-${articleId}`);
+        const comment = DOMPurify.sanitize(commentInput.value.trim());
+        
+        if (!comment) {
+            showToast('Comment cannot be empty!');
+            return;
+        }
+
+        try {
+            const { error } = await supabase
+                .from('comments')
+                .insert([{
+                    article_id: articleId,
+                    content: comment,
+                    author: 'Anonymous',
+                    created_at: new Date()
+                }]);
+
+            if (error) throw error;
+
+            commentInput.value = '';
+            showToast('Comment posted!');
+            loadComments(articleId);
+        } catch (error) {
+            showToast('Failed to post comment');
+        }
+    };
+
+    window.loadComments = async (articleId) => {
+        try {
+            const { data: comments, error } = await supabase
+                .from('comments')
+                .select('*')
+                .eq('article_id', articleId)
+                .order('created_at', { ascending: false });
+
+            const container = document.getElementById(`comments-${articleId}`);
+            if (container) {
+                container.innerHTML = comments.map(comment => `
+                    <div class="comment">
+                        <div class="comment-header">
+                            <span class="comment-author">${comment.author}</span>
+                            <span class="comment-date">${new Date(comment.created_at).toLocaleString()}</span>
+                        </div>
+                        <p class="comment-content">${comment.content}</p>
+                    </div>
+                `).join('') || '<p class="empty-comments">No comments yet!</p>';
+            }
+        } catch (error) {
+            console.error('Comments error:', error);
+        }
+    };
+
+    // Article Loading
+    async function loadArticles() {
+        try {
+            showLoading(true);
+            const { data: articles, error } = await supabase
+                .from('articles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const containers = {
+                hotTakes: document.getElementById('hotTakes'),
+                classicTakes: document.getElementById('classicTakes'),
+                searchResults: document.getElementById('searchResults'),
+                allTakes: document.getElementById('allTakes')
+            };
+
+            Object.values(containers).forEach(c => c && (c.innerHTML = ''));
+
+            articles.forEach(article => {
+                const card = createArticleCard(article);
+                let targetContainer = containers.allTakes || containers.searchResults || 
+                    ((article.hot_score || 0) >= 75 ? containers.classicTakes : containers.hotTakes);
+                
+                if (targetContainer) {
+                    targetContainer.insertAdjacentHTML('beforeend', card);
+                    setTimeout(() => loadComments(article.id), 100);
+                }
+            });
+
+            ['hotTakes', 'classicTakes', 'searchResults', 'allTakes'].forEach(id => {
+                const container = document.getElementById(id);
+                const emptyState = document.getElementById(`${id}Empty`);
+                if (container && emptyState) {
+                    emptyState.style.display = container.children.length ? 'none' : 'block';
+                }
+            });
+
+        } catch (error) {
+            showToast('Failed to load content');
+        } finally {
+            showLoading(false);
+            if (typeof twttr !== 'undefined') twttr.widgets.load();
+        }
     }
 
-    const { data, error } = await supabase
-        .from('takes')
-        .insert([{
-            title: title,
-            content: content,
-            image_url: imageUrl
-        }])
-        .select('*');
+    // Filter System
+    async function handleFilterClick(e) {
+        const category = e.target.dataset.category;
+        try {
+            let query = supabase.from('articles').select('*');
+            
+            switch(category) {
+                case 'hot':
+                    query = query.gte('hot_score', 50);
+                    break;
+                case 'controversial':
+                    query = query.gte('trash_score', 30);
+                    break;
+                case 'tactical':
+                    query = query.ilike('title', '%tactics%');
+                    break;
+            }
 
-    hideLoading();
-
-    if (error) {
-        console.error("Error submitting take:", error);
-        showToast('Failed to submit take.');
-        return;
+            const { data: articles, error } = await query;
+            document.getElementById('hotTakes').innerHTML = articles.map(createArticleCard).join('');
+        } catch (error) {
+            showToast('Filter error');
+        }
     }
 
-    document.getElementById('title').value = '';
-    document.getElementById('content').value = '';
-    imageInput.value = '';
-    imagePreview.src = "";
-    imagePreview.parentElement.style.display = 'none';
+    // Sorting System
+    async function handleSortChange(e) {
+        try {
+            let query = supabase.from('articles').select('*');
+            
+            switch(e.target.value) {
+                case 'hottest':
+                    query = query.order('hot_score', { ascending: false });
+                    break;
+                case 'controversial':
+                    query = query.order('trash_score', { ascending: false });
+                    break;
+                default:
+                    query = query.order('created_at', { ascending: false });
+            }
 
-    showToast('Take submitted successfully!');
-    loadArticles();
-});
-
-// Search Functionality
-document.querySelector('#searchButton')?.addEventListener('click', function() {
-  const query = document.querySelector('#searchInput').value.trim();
-  if (query) {
-    window.location.href = `/search-results.html?query=${encodeURIComponent(query)}`;
-  }
-});
-
-// Game Modal Functionality
-function playGame(gameUrl) {
-  const modal = document.getElementById('gameModal');
-  const iframe = document.getElementById('gameFrame');
-  iframe.src = gameUrl;
-  modal.style.display = 'block';
-}
-
-function closeModal() {
-  const modal = document.getElementById('gameModal');
-  const iframe = document.getElementById('gameFrame');
-  iframe.src = '';
-  modal.style.display = 'none';
-}
-
-// Trending Takes Functionality
-async function loadTrendingTakes() {
-  const { data: trendingTakes, error } = await supabase
-    .from('takes')
-    .select('*')
-    .order('hotMeter', { ascending: false })
-    .limit(10);
-
-  if (!error) {
-    const container = document.getElementById('trendingTakes');
-    container.innerHTML = '';
-
-    trendingTakes.forEach(take => {
-      const takeCard = document.createElement('div');
-      takeCard.className = 'article-card';
-      takeCard.innerHTML = `
-        <h3>${DOMPurify.sanitize(take.title)}</h3>
-        <p>${DOMPurify.sanitize(take.content)}</p>
-        <div class="game-stats">
-          <span><i class="fas fa-fire"></i> ${take.hotMeter}</span>
-          <span><i class="fas fa-comments"></i> ${take.commentCount || 0}</span>
-        </div>
-      `;
-      container.appendChild(takeCard);
-    });
-  }
-}
-// Initialize Page-Specific Functions
-document.addEventListener('DOMContentLoaded', function() {
-  initializeDarkMode();
-
-  // Search Results Page
-  if (window.location.pathname.includes('search-results')) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('query');
-    document.getElementById('results').innerHTML = `Searching for "${query}"...`;
-  }
-
-  // Trending Page
-  if (window.location.pathname.includes('trending')) {
-    loadTrendingTakes();
-  }
-
-  // Games Page Modal Closing
-  document.querySelector('.close-modal')?.addEventListener('click', closeModal);
-  window.onclick = function(event) {
-    if (event.target == document.getElementById('gameModal')) {
-      closeModal();
+            const { data: articles, error } = await query;
+            document.getElementById('allTakes').innerHTML = articles.map(createArticleCard).join('');
+        } catch (error) {
+            showToast('Sorting failed');
+        }
     }
-  }
-});
-// Load articles on initial load
-loadArticles();
+
+    // Form Handling
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="mini-spinner"></div>';
+
+            const newArticle = {
+                title: DOMPurify.sanitize(form.takeTitle.value),
+                author: DOMPurify.sanitize(form.takeName.value),
+                content: DOMPurify.sanitize(form.takeContent.value),
+                xPostLink: DOMPurify.sanitize(form.xPostLink.value),
+                image: localStorage.getItem('tempImage') || null,
+                hot_score: 0,
+                trash_score: 0
+            };
+
+            const { error } = await supabase
+                .from('articles')
+                .insert([newArticle]);
+
+            if (error) throw error;
+
+            showToast('Take launched! 🚀');
+            form.reset();
+            localStorage.removeItem('tempImage');
+            document.querySelector('.image-preview-container').innerHTML = '';
+            loadArticles();
+
+        } catch (error) {
+            console.error('Submission error:', error);
+            showToast('Failed to submit take');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Launch Take 🚀';
+        }
+    }
+
+    // Image Upload
+    function handleImageUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!config.allowedImageTypes.includes(file.type)) {
+            showToast('Only JPG/PNG allowed!');
+            e.target.value = '';
+            return;
+        }
+
+        if (file.size > config.maxImageSize) {
+            showToast('Max 2MB allowed!');
+            e.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            localStorage.setItem('tempImage', event.target.result);
+            document.querySelector('.image-preview-container').innerHTML = `
+                <img src="${event.target.result}" class="image-preview">
+                <button class="remove-image" 
+                        onclick="this.parentElement.innerHTML = ''; localStorage.removeItem('tempImage')">
+                    ×
+                </button>
+            `;
+            if (window.twttr) window.twttr.widgets.load();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Search System
+    async function performSearch() {
+        try {
+            const searchTerm = document.getElementById('globalSearch')?.value.toLowerCase() || '';
+            const timeFilter = document.getElementById('timeFilter')?.value || 'all';
+            const scoreFilter = document.getElementById('scoreFilter')?.value || 0;
+
+            let query = supabase
+                .from('articles')
+                .select('*');
+
+            if (searchTerm) {
+                query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`);
+            }
+
+            if (timeFilter !== 'all') {
+                const date = new Date();
+                if (timeFilter === 'week') date.setDate(date.getDate() - 7);
+                if (timeFilter === 'month') date.setMonth(date.getMonth() - 1);
+                query = query.gte('created_at', date.toISOString());
+            }
+
+            if (scoreFilter > 0) {
+                query = query.gte('hot_score', scoreFilter);
+            }
+
+            const { data: articles, error } = await query;
+            const container = document.getElementById('searchResults');
+            if (container) {
+                container.innerHTML = articles.map(createArticleCard).join('');
+                document.getElementById('noResults').style.display = 
+                    articles.length ? 'none' : 'block';
+                
+                articles.forEach(article => loadComments(article.id));
+            }
+
+        } catch (error) {
+            showToast('Search failed');
+        }
+    }
+
+    // Helper Functions
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.remove('toast-hidden');
+        setTimeout(() => toast.classList.add('toast-hidden'), 3000);
+    }
+
+    function updateCharCount() {
+        const counter = document.getElementById('charCount');
+        if (counter) {
+            const textarea = document.getElementById('takeContent');
+            counter.textContent = `${textarea.value.length}/500`;
+        }
+    }
+
+    function showLoading(show) {
+        const spinner = document.getElementById('loading');
+        if (spinner) spinner.style.display = show ? 'block' : 'none';
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+        darkModeToggle?.addEventListener('click', toggleDarkMode);
+        document.getElementById('searchInput')?.addEventListener('input', performSearch);
+        document.getElementById('globalSearch')?.addEventListener('input', performSearch);
+        document.getElementById('takeImage')?.addEventListener('change', handleImageUpload);
+        document.getElementById('takeContent')?.addEventListener('input', updateCharCount);
+        document.getElementById('sortFilter')?.addEventListener('change', handleSortChange);
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', handleFilterClick);
+        });
+
+        document.querySelectorAll('.take-form').forEach(form => {
+            form.addEventListener('submit', handleFormSubmit);
+        });
+    }
+// ========= GAME SYSTEM =========
+function launchGame(gameId) {
+    const gameUrls = {
+        'formation-puzzle': 'https://formation-puzzle.example.com',
+        'transfer-guesser': 'https://transfer-guesser.example.com',
+        'tactical-quiz': 'https://tactical-quiz.example.com',
+        'match-simulator': 'https://match-sim.example.com'
+    };
+
+    const modal = document.getElementById('gameModal');
+    const iframe = document.getElementById('gameFrame');
+    iframe.src = gameUrls[gameId];
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGame() {
+    const modal = document.getElementById('gameModal');
+    const iframe = document.getElementById('gameFrame');
+    iframe.src = '';
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('gameModal');
+    if (event.target == modal) {
+        closeGame();
+    }
+}
+    // Initialize
+    function initializeApp() {
+        try {
+            initializeDarkMode();
+            setupEventListeners();
+            loadArticles();
+        } catch (error) {
+            console.error('Critical error:', error);
+            document.body.innerHTML = `<h1>System Error</h1><p>${error.message}</p>`;
+        }
+    }
+
+    initializeApp();
 });
