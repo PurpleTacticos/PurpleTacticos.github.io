@@ -1,65 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Football Games - Football Community</title>
-  <link rel="stylesheet" href="styles/main.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Games - Purple Tacticos</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://zlgdklqjaomnlfteairf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsZ2RrbHFqYW9tbmxmdGVhaXJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwNjMxODQsImV4cCI6MjA1OTYzOTE4NH0.UlpTet57p8RZcmJ5ULf2TCFVG_rTubx7rLHRTHRFRn8';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    </script>
 </head>
 <body>
-  <nav class="nav-bar">
-    <div class="brand">
-      <img src="/images/logo.png" alt="Logo" class="logo">
-      <h1>Football Games</h1>
-    </div>
-    <div class="nav-links">
-      <a href="/">Home</a>
-      <a href="/trending.html">Trending</a>
-      <a href="/games.html" class="active">Games</a>
-      <button id="darkModeToggle"><i class="fas fa-moon"></i></button>
-    </div>
-  </nav>
+    <header>
+        <nav class="nav-bar">
+            <div class="brand">
+                <img src="https://i.pinimg.com/736x/c7/92/2b/c7922bbec96f996d9eded7837d324ff2.jpg" alt="Logo" class="logo">
+                <h1>Purple Tacticos</h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="index.html#old-articles">Classics</a>
+                <a href="index.html#new-heat">New Heat</a>
+                <a href="search.html">Search</a>
+                <a href="games.html" class="active">Games</a>
+                <a href="all-takes.html">All Takes</a>
+                <button id="darkModeToggle" aria-label="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
 
-  <div class="section-container">
-    <h2>Featured Football Games</h2>
-    <div class="game-grid">
-      <div class="game-card">
-        <div class="game-preview" style="background-image: url('/games/connections.jpg');">
-          <div class="game-overlay">
-            <button class="btn primary" onclick="playGame('/games/connections.html')">
-              Play Now <i class="fas fa-play"></i>
-            </button>
-          </div>
+    <main class="section-container">
+        <h2>⚽ Interactive Football Games</h2>
+        <div class="game-lobby" id="gameLobby">
+            <!-- Games will be loaded here -->
         </div>
-        <h3>Club Connections</h3>
-        <p>Connect football clubs through their shared history and rivalries</p>
-      </div>
 
-      <div class="game-card">
-        <div class="game-preview" style="background-image: url('/games/bingo.jpg');">
-          <div class="game-overlay">
-            <button class="btn primary" onclick="playGame('/games/bingo.html')">
-              Play Now <i class="fas fa-play"></i>
-            </button>
-          </div>
+        <!-- Formation Builder Game -->
+        <div id="formationGame" class="hidden game-section">
+            <div class="game-header">
+                <button class="btn secondary" onclick="exitGame()">Exit</button>
+                <h3>Formation Builder</h3>
+                <div class="game-stats">
+                    <span id="formationTimer">02:00</span>
+                    <span id="formationScore">Score: 0</span>
+                </div>
+            </div>
+            <div class="formation-builder" id="formationBuilder"></div>
+            <div class="leaderboard">
+                <h4>Top Formations</h4>
+                <div id="formationLeaderboard"></div>
+            </div>
         </div>
-        <h3>Transfer Bingo</h3>
-        <p>Predict summer transfers and mark them off your bingo card</p>
-      </div>
-    </div>
-  </div>
 
-  <!-- Game Modal -->
-  <div class="game-modal" id="gameModal">
-    <div class="modal-content">
-      <span class="close-modal" onclick="closeModal()">×</span>
-      <iframe id="gameFrame" src="" frameborder="0"></iframe>
-    </div>
-  </div>
+        <!-- Transfer Quiz Game -->
+        <div id="transferQuiz" class="hidden game-section">
+            <div class="game-header">
+                <button class="btn secondary" onclick="exitGame()">Exit</button>
+                <h3>Transfer Market Quiz</h3>
+                <div class="game-stats">
+                    <span id="quizScore">Score: 0</span>
+                </div>
+            </div>
+            <div class="transfer-quiz" id="transferQuizContainer"></div>
+            <div class="leaderboard">
+                <h4>Top Traders</h4>
+                <div id="transferLeaderboard"></div>
+            </div>
+        </div>
+    </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+    <script src="scripts/games.js"></script>
 </body>
 </html>
